@@ -4,14 +4,18 @@
 - name: Flush handlers
   meta: flush_handlers
 
-- name: Learn to Caddy that, in fact, he's John.
+- name: Set Peronnality to John if any provided
+  set_fact: caddy_who="John"
+  when: caddy_who is undefined
+
+- name: Learn to Caddy who I want him to be.
   become: yes
   become_user: root
   template:
     src: ../templates/Caddyfile.j2
     dest: /etc/caddy/Caddyfile
 
-- name: Erase John's memory to implement new personnality
+- name: Erase Caddy's memory to implement new personnality
   become: yes
   become_user: root 
   ansible.builtin.systemd:
