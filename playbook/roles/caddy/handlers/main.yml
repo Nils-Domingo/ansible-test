@@ -1,0 +1,45 @@
+---
+
+- name: caddy systemd daemon reload
+  systemd:
+    daemon_reload: true
+  become: true
+  tags:
+    - caddy
+
+- name: reload caddy
+  command: /usr/bin/caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+  register: result
+  failed_when: false
+  # Hack to trigger a restart if reload failed (can happen when changing some config that need a restart config)
+  changed_when: "result.rc != 0"
+  listen: "reload caddy"
+  notify:
+    - restart caddy
+    - wait for caddy
+  become: true
+  tags:
+    - caddy
+
+- name: Restart Caddy
+  service:
+    name: "caddy"
+    state: restarted
+  become: true
+  listen: "restart caddy"
+  tags:
+    - caddy
+
+- name: Ensure Caddy API is up & running
+  uri:
+    url: "http://127.0.0.1:2019/config/"
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 60
+  delay: 1
+  listen: "wait for caddy"
+  when:
+    - not ansible_check_mode
+  tags:
+    - caddy

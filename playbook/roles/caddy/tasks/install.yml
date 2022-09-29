@@ -1,0 +1,149 @@
+---
+# Install Caddy package
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+  register: result
+  become: true
+  retries: 6
+  delay: 10
+  until: result is succeeded
+  tags:
+    - caddy
+    - install
+
+- name: Install packages to handle Caddy https repositories
+  apt:
+    state: present
+    pkg:
+      - debian-keyring
+      - debian-archive-keyring
+      - apt-transport-https
+  register: result
+  become: true
+  retries: 6
+  delay: 10
+  until: result is succeeded
+  tags:
+    - caddy
+    - install
+
+- name: "Add apt key for Caddy repositories"
+  apt_key:
+    state: present
+    url: 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key'
+  become: true
+  retries: 6
+  delay: 10
+  tags:
+    - caddy
+    - install
+
+- name: "Set Caddy repositories"
+  apt_repository:
+    state: present
+    repo: '{{ item }}'
+  with_items:
+    - deb https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main
+    - deb-src https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main
+  become: true
+  retries: 6
+  delay: 10
+  tags:
+    - caddy
+    - install
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+  register: result
+  become: true
+  retries: 6
+  delay: 10
+  until: result is succeeded
+  tags:
+    - caddy
+    - install
+
+- name: Install Caddy package
+  apt:
+    state: present
+    force: true
+    pkg:
+      - caddy={{ caddy_version }}
+  register: result
+  become: true
+  retries: 6
+  delay: 10
+  until: result is succeeded
+  when:
+    - caddy_download_from_site is not defined
+  notify:
+    - restart caddy
+    - wait for caddy
+  tags:
+    - caddy
+    - install
+
+- name: Create directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0775'
+  loop:
+    - /etc/systemd/system/caddy.service.d/
+  become: true
+  tags:
+    - caddy
+    - install
+
+- name: Add systemd /lib/systemd/system/caddy.service
+  template:
+    src: caddy.service.j2
+    dest: /lib/systemd/system/caddy.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - caddy systemd daemon reload
+    - restart caddy
+    - wait for caddy
+  become: true
+  tags:
+    - caddy
+    - install
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Start Caddy service
+  service:
+    name: caddy
+    state: started
+    enabled: true
+  notify:
+    - wait for caddy
+  become: true
+  tags:
+    - caddy
+    - install
+
+- name: Create directory '/var/log/caddy'
+  file:
+    path: /var/log/caddy
+    state: directory
+    owner: caddy
+    group: caddy
+    mode: '0775'
+  become: true
+  tags:
+    - caddy
+    - install
+
+- name: Flush handlers
+  meta: flush_handlers

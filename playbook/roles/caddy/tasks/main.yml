@@ -1,0 +1,7 @@
+---
+
+- name: Install Caddy
+  include: install.yml
+
+- name: Configure Caddy
+  include: config.yml
