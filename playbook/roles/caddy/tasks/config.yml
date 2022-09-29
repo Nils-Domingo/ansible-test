@@ -3,3 +3,18 @@
 
 - name: Flush handlers
   meta: flush_handlers
+
+- name: Learn to Caddy that, in fact, he's John.
+  become: yes
+  become_user: root
+  template:
+    src: ../templates/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+
+- name: Erase John's memory to implement new personnality
+  become: yes
+  become_user: root 
+  ansible.builtin.systemd:
+    state: reloaded
+    name: caddy
+
