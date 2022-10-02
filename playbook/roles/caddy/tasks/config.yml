@@ -21,4 +21,5 @@
   ansible.builtin.systemd:
     state: reloaded
     name: caddy
+  notify: Ensure Caddy is who I want
 

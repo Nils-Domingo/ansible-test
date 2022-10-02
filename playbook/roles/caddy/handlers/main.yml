@@ -30,6 +30,23 @@
   tags:
     - caddy
 
+- name: Ensure Caddy is who I want
+  uri:
+    url: "http://127.0.0.1"
+    status_code: 200
+    return_content: yes
+  register: result
+  vars:
+    attended: "Hello, I'm {{ caddy_who }}!"
+  failed_when: "attended not in result.content"
+  retries: 60
+  delay: 1
+  listen: "wait for caddy"
+  when:
+    - not ansible_check_mode
+  tags:
+    - caddy
+
 - name: Ensure Caddy API is up & running
   uri:
     url: "http://127.0.0.1:2019/config/"
